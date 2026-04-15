@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run GUI",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/play_pygame.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Level Solver",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/solve_level.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Generate Level",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/generate_levels.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.envFile": "${workspaceFolder}/.env",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "editor.formatOnSave": true
+}
