@@ -36,7 +36,7 @@ This project includes:
 
 ## Project Structure
 
-
+```text
 amazetraining/
 ├── .vscode/
 │   ├── launch.json
