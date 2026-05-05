@@ -7,8 +7,7 @@ from amaze_ai.generator import make_random_solvable_level
 from amaze_ai.types import State
 
 
-# Reinforcement-learning wrapper for the Amaze puzzle environment.
-# Current version supports reset() and step() for early capstone project development.
+"""Reinforcement-learning wrapper for the Amaze puzzle environment."""
 
 
 class AmazeRLWrapper:

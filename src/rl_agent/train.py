@@ -1,13 +1,15 @@
-from amaze_ai.config import ACTIONS
-from rl_agent.env_wrapper import AmazeRLWrapper
+from __future__ import annotations
+
+from rl_agent.agent import QLearningAgent
+from rl_agent.factory import EnvironmentFactory
 
 
-# Initial RL training entry point for Milestone 1.
-# Current version is a runnable skeleton used to verify modular structure and environment interaction.
+"""Initial RL training entry point for Milestone 1."""
 
 
 def main() -> None:
-    env = AmazeRLWrapper(rows=5, cols=5, wall_prob=0.2, max_steps=20)
+    env = EnvironmentFactory.create_easy_env()
+    agent = QLearningAgent()
 
     state = env.reset()
     print("Initial state:", state)
@@ -16,7 +18,10 @@ def main() -> None:
     step_count = 0
 
     while not done and step_count < 5:
-        action = ACTIONS[step_count % len(ACTIONS)]
+        # Placeholder Q-values for now
+        q_values = [0.0, 0.0, 0.0, 0.0]
+
+        action = agent.select_action(q_values)
         next_state, reward, done, info = env.step(action)
 
         print(f"Step {step_count + 1}")
