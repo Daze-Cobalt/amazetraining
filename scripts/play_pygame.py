@@ -11,6 +11,9 @@ from amaze_ai.generator import (
 )
 from amaze_ai.solver import solve_bfs
 
+from rl_agent.agent import QLearningAgent
+from rl_agent.strategy import EpsilonGreedyStrategy
+
 WINDOW_WIDTH = 1440
 WINDOW_HEIGHT = 1000
 HUD_HEIGHT = 160
@@ -19,6 +22,8 @@ BOARD_AREA_HEIGHT = WINDOW_HEIGHT - HUD_HEIGHT
 
 MARGIN = 2
 REPLAY_DELAY = 250  # milliseconds between replay moves
+
+AGENT_DELAY = 250
 
 BG_COLOR = (25, 25, 25)
 WALL_COLOR = (60, 60, 60)
@@ -84,6 +89,7 @@ def draw_hud(
     font: pygame.font.Font,
     move_count: int,
     replaying: bool,
+    agent_playing: bool,
     current_solution,
     difficulty_name: str,
 ) -> None:
@@ -109,17 +115,22 @@ def draw_hud(
         line3 = "R reset | N random solvable | 1 easy | 2 medium | 3 hard | ESC quit"
         color2 = TEXT_COLOR
         color3 = TEXT_COLOR
+    elif agent_playing:
+        line2 = "RL agent is playing..."
+        line3 = "R reset | K Stop agent | ESC quit"
+        color2 = TEXT_COLOR
+        color3 = TEXT_COLOR
     elif current_solution is not None:
         line2 = f"BFS ready: {len(current_solution)} moves"
         line3 = (
             "Arrows/WASD move | R reset | N random solvable | "
-            "1 easy | 2 medium | 3 hard | SPACE replay | I AI autoplay | ESC quit"
+            "1 easy | 2 medium | 3 hard | SPACE replay | I AI autoplay | L RL agent | ESC quit"
         )
         color2 = TEXT_COLOR
         color3 = TEXT_COLOR
     else:
         line2 = "Arrows/WASD move | R reset | N random solvable | 1 easy | 2 medium | 3 hard"
-        line3 = "B solve | SPACE replay | I AI autoplay | ESC quit"
+        line3 = "B solve | SPACE replay | I AI autoplay | L RL agent | ESC quit"
         color2 = TEXT_COLOR
         color3 = TEXT_COLOR
 
@@ -130,6 +141,12 @@ def draw_hud(
     screen.blit(surf1, (10, panel_y + 10))
     screen.blit(surf2, (10, panel_y + 45))
     screen.blit(surf3, (10, panel_y + 80))
+
+
+def get_agent_action(agent, env, state) -> int:
+    # Placeholder until state_encoder + q_network are fully integrated
+    q_values = [0.0, 0.0, 0.0, 0.0]
+    return agent.select_action(q_values)
 
 
 def main() -> None:
@@ -170,10 +187,16 @@ def main() -> None:
     replaying = False
     last_replay_time = 0
 
+    agent = QLearningAgent(strategy=EpsilonGreedyStrategy(epsilon=0.5))
+    agent_playing = False
+    last_agent_time = 0
+    agent_steps_taken = 0
+    agent_step_limit = 100
+
     def load_level(new_grid, new_start, new_solution=None, new_difficulty="Random Solvable"):
         nonlocal env, state, cell_size, board_offset_x, board_offset_y
         nonlocal move_count, current_solution, replay_solution, replay_index, replaying
-        nonlocal difficulty_name
+        nonlocal difficulty_name, agent_playing, last_agent_time, agent_steps_taken
 
         env = AmazeEnv(new_grid, new_start)
         state = env.reset()
@@ -190,6 +213,10 @@ def main() -> None:
         replay_index = 0
         replaying = False
         difficulty_name = new_difficulty
+
+        agent_playing = False
+        last_agent_time = 0
+        agent_steps_taken = 0
 
     running = True
     while running:
@@ -247,6 +274,20 @@ def main() -> None:
                     else:
                         print("AI takeover failed: no solution found.")
 
+                elif event.key == pygame.K_l:
+                    agent_playing = True
+                    replaying = False
+                    replay_solution = []
+                    replay_index = 0
+                    current_solution = None
+                    agent_steps_taken = 0
+                    last_agent_time = now
+                    print("RL agent playback started.")
+
+                elif event.key == pygame.K_k:
+                    agent_playing = False
+                    print("RL agent playback stopped")
+
                 elif event.key == pygame.K_n:
                     try:
                         grid, start = make_random_solvable_level(rows=7, cols=7, wall_prob=0.22)
@@ -285,7 +326,7 @@ def main() -> None:
                     except Exception as e:
                         print(f"Unexpected hard-level error: {e}")
 
-                elif event.key in key_to_action and not env.is_goal(state) and not replaying:
+                elif event.key in key_to_action and not env.is_goal(state) and not replaying and not agent_playing:
                     action = key_to_action[event.key]
                     next_state = env.step(state, action).state
 
@@ -305,8 +346,28 @@ def main() -> None:
         if replaying and replay_index >= len(replay_solution):
             replaying = False
 
+        if agent_playing and not env.is_goal(state):
+            if now - last_agent_time >= AGENT_DELAY:
+                action = get_agent_action(agent, env, state)
+                next_state = env.step(state, action).state
+
+                if next_state != state:
+                    state = next_state
+                    move_count += 1
+                
+                agent_steps_taken += 1
+                last_agent_time = now
+
+                if agent_steps_taken >= agent_step_limit:
+                    agent_playing = False
+                    print("RL agent stopped: step limit reached.")
+
+        if agent_playing and env.is_goal(state):
+            agent_playing = False
+            print("RL agent solved the level.")
+
         draw_board(screen, env, state, cell_size, board_offset_x, board_offset_y)
-        draw_hud(screen, env, state, font, move_count, replaying, current_solution, difficulty_name)
+        draw_hud(screen, env, state, font, move_count, replaying, agent_playing, current_solution, difficulty_name)
         pygame.display.flip()
         clock.tick(60)
 
