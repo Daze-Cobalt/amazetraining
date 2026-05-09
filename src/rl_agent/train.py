@@ -2,26 +2,28 @@ from __future__ import annotations
 
 from rl_agent.agent import QLearningAgent
 from rl_agent.factory import EnvironmentFactory
-
-
-"""Initial RL training entry point for Milestone 1."""
+from rl_agent.q_network import QNetwork
+from rl_agent.state_encoder import encode_state, get_state_size
 
 
 def main() -> None:
     env = EnvironmentFactory.create_easy_env()
-    agent = QLearningAgent()
-
     state = env.reset()
+
+    input_size = get_state_size(env.env.rows, env.env.cols)
+    q_network = QNetwork(input_size=input_size)
+    agent = QLearningAgent(q_network=q_network)
+
     print("Initial state:", state)
+    print("Encoded state size:", input_size)
 
     done = False
     step_count = 0
 
     while not done and step_count < 5:
-        # Placeholder Q-values for now
-        q_values = [0.0, 0.0, 0.0, 0.0]
+        encoded_state = encode_state(env.env, env.state)
+        action = agent.select_action_from_state(encoded_state)
 
-        action = agent.select_action(q_values)
         next_state, reward, done, info = env.step(action)
 
         print(f"Step {step_count + 1}")
@@ -32,7 +34,6 @@ def main() -> None:
         print("Info:", info)
         print("-" * 40)
 
-        state = next_state
         step_count += 1
 
 

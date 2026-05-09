@@ -13,6 +13,9 @@ from amaze_ai.solver import solve_bfs
 
 from rl_agent.agent import QLearningAgent
 from rl_agent.strategy import EpsilonGreedyStrategy
+from rl_agent.q_network import QNetwork
+from rl_agent.state_encoder import encode_state, get_state_size
+
 
 WINDOW_WIDTH = 1440
 WINDOW_HEIGHT = 1000
@@ -144,9 +147,8 @@ def draw_hud(
 
 
 def get_agent_action(agent, env, state) -> int:
-    # Placeholder until state_encoder + q_network are fully integrated
-    q_values = [0.0, 0.0, 0.0, 0.0]
-    return agent.select_action(q_values)
+    encoded_state = encode_state(env, state)
+    return agent.select_action_from_state(encoded_state)
 
 
 def main() -> None:
@@ -187,7 +189,10 @@ def main() -> None:
     replaying = False
     last_replay_time = 0
 
-    agent = QLearningAgent(strategy=EpsilonGreedyStrategy(epsilon=0.5))
+    input_size = get_state_size(env.rows, env.cols)
+    q_network = QNetwork(input_size=input_size)
+    agent = QLearningAgent(q_network=q_network, strategy=EpsilonGreedyStrategy(epsilon=0.5))
+
     agent_playing = False
     last_agent_time = 0
     agent_steps_taken = 0
@@ -196,10 +201,14 @@ def main() -> None:
     def load_level(new_grid, new_start, new_solution=None, new_difficulty="Random Solvable"):
         nonlocal env, state, cell_size, board_offset_x, board_offset_y
         nonlocal move_count, current_solution, replay_solution, replay_index, replaying
-        nonlocal difficulty_name, agent_playing, last_agent_time, agent_steps_taken
+        nonlocal difficulty_name, agent, agent_playing, last_agent_time, agent_steps_taken
 
         env = AmazeEnv(new_grid, new_start)
         state = env.reset()
+
+        input_size = get_state_size(env.rows, env.cols)
+        q_network = QNetwork(input_size=input_size)
+        agent = QLearningAgent(q_network=q_network, strategy=EpsilonGreedyStrategy(epsilon=0.5))
 
         cell_size = compute_cell_size(env.rows, env.cols)
         board_pixel_width = env.cols * cell_size
@@ -217,6 +226,7 @@ def main() -> None:
         agent_playing = False
         last_agent_time = 0
         agent_steps_taken = 0
+        agent_step_limit = 100
 
     running = True
     while running:
