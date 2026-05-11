@@ -1,5 +1,7 @@
 import sys
 import pygame
+import os
+import torch
 
 from amaze_ai.config import UP, DOWN, LEFT, RIGHT, ACTION_NAMES
 from amaze_ai.env import AmazeEnv
@@ -191,6 +193,13 @@ def main() -> None:
 
     input_size = get_state_size(env.rows, env.cols)
     q_network = QNetwork(input_size=input_size)
+
+    model_path = "data/rl_models/q_network.pt"
+
+    if os.path.exists(model_path):
+        q_network.load_state_dict(torch.load(model_path))
+        print("Loaded trained model.")
+
     agent = QLearningAgent(q_network=q_network, strategy=EpsilonGreedyStrategy(epsilon=0.5))
 
     agent_playing = False
@@ -207,7 +216,12 @@ def main() -> None:
         state = env.reset()
 
         input_size = get_state_size(env.rows, env.cols)
+        
         q_network = QNetwork(input_size=input_size)
+
+        if os.path.exists(model_path):
+            q_network.load_state_dict(torch.load(model_path))
+
         agent = QLearningAgent(q_network=q_network, strategy=EpsilonGreedyStrategy(epsilon=0.5))
 
         cell_size = compute_cell_size(env.rows, env.cols)
