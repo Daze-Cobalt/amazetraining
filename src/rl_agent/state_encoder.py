@@ -34,7 +34,7 @@ def encode_state(env: AmazeEnv, state: State) -> List[float]:
             if env.grid[r][c] == 0:
                 painted_features.append(0.0)
             else:
-                bit = env.cell_to_bit[(r, c)]
+                bit = env.cell_to_bit(r, c)
                 painted = (state.painted_mask >> bit) & 1
                 painted_features.append(float(painted))
 

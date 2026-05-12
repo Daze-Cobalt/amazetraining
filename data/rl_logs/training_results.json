@@ -1,5 +1,9 @@
 {
-  "encoded_state_size": 75,
-  "steps_run": 5,
-  "final_done": false
+  "episodes": 100,
+  "max_steps_per_episode": 200,
+  "total_steps": 4000,
+  "last_episode_steps": 40,
+  "final_done": true,
+  "board_size": "5x5",
+  "model_path": "data/rl_models/q_network.pt"
 }

@@ -11,6 +11,17 @@ from amaze_ai.types import State
 
 
 class AmazeRLWrapper:
+
+    @property
+    def grid(self):
+        grid_value = self.env.grid
+        if callable(grid_value):
+            return grid_value()
+        return grid_value
+    
+    def cell_to_bit(self, r: int, c: int) -> int:
+        return r * self.cols + c
+
     def __init__(
         self,
         rows: int = 5,
